@@ -1,0 +1,23 @@
+{
+    "appenders": {
+        "file": {
+            "type": "dateFile",
+            "filename": "log/bbc.log",
+            "pattern": "-yyyy-MM-dd",
+            "category": "node"
+        },
+        "console": {
+            "type": "console",
+            "category": "node"
+        }
+    },
+    "categories": {
+        "node": {
+            "appenders": [
+                "file",
+                "console"
+            ],
+            "level": "DEBUG"
+        }
+    }
+}
