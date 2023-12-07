@@ -4,15 +4,15 @@
             "type": "dateFile",
             "filename": "log/bbc.log",
             "pattern": "-yyyy-MM-dd",
-            "category": "node"
+            "category": "default"
         },
         "console": {
             "type": "console",
-            "category": "node"
+            "category": "default"
         }
     },
     "categories": {
-        "node": {
+        "default": {
             "appenders": [
                 "file",
                 "console"
