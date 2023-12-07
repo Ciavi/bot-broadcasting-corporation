@@ -1,6 +1,6 @@
 import { CacheType, Client, Events, GatewayIntentBits, Interaction, REST, RESTPostAPIChatInputApplicationCommandsJSONBody, Routes, SlashCommandBuilder } from "discord.js";
 import * as env from "dotenv";
-import Logger from "./bundle/logging";
+import Logger from "./bundle/helpers/logging";
 import { Command } from "./bundle/commands/i.command";
 import HelpCommand from "./bundle/commands/help";
 import FakeCommand from "./bundle/commands/fake";
@@ -15,7 +15,7 @@ class Bot {
 
     constructor(TOKEN: string | undefined = process.env.TOKEN, INTENTS: number = GatewayIntentBits.Guilds | GatewayIntentBits.GuildMessages | GatewayIntentBits.MessageContent) {
         this.logger = new Logger();
-        this.rest = new REST().setToken(TOKEN!);
+        this.rest = new REST();
         
         this.logger.debug(`Initialising client with intents: ${INTENTS}`);
         this.client = new Client({ intents: INTENTS });
@@ -50,37 +50,41 @@ class Bot {
         let help = new HelpCommand(this.client);
         let fake = new FakeCommand(this.client);
 
-        this.logger.debug(`Registering command ${help.command.name}`);
         this.commands.push(help);
-        this.logger.debug(`Registering command ${fake.command.name}`);
         this.commands.push(fake);
         
         let command_data: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
         this.commands.forEach((command) => command_data.push(command.command.toJSON()));
 
-        try {
-            await this.rest.put(
-                Routes.applicationCommands(this.client.application!.id),
-                { body: command_data }
-            );
+        let is_first_run = new Boolean(process.env.FIRST_RUN! == "true");
 
-            this.logger.info(`Commands registered successfully`);
-        } catch (error: any) {
-            this.logger.error(error.message);
+        if(is_first_run == true) {
+            this.logger.info(`Registering commands...`);
+            this.rest = this.rest.setToken(this.client.token!);
+
+            try {
+                let data = await this.rest.put(
+                    Routes.applicationCommands(this.client.application!.id),
+                    { body: command_data }
+                );
+                this.logger.info(`${(data as Array<unknown>).length} commands registered successfully`);
+            } catch (error: any) {
+                this.logger.error(error.message);
+            }
         }
     }
 
     public async onClientReady(client: Client<true>) {
         this.logger.info(`Client ${client.user.tag} is ready`);
+        this.client = client;
         
-        this.logger.info(`Registering commands...`);
         await this.registerCommands();
     }
 
     public async onInteractionCreated(interaction: Interaction<CacheType>) {
         this.logger.debug(`Interaction ${interaction.id} invoked`);
     
-        if(interaction.isCommand()) {
+        if(interaction.isChatInputCommand()) {
             this.logger.debug(`Running command ${interaction.commandName}#${interaction.id}`);
             
             await this.commands.filter((c) => c.command.name == interaction.commandName).at(0)?.run(interaction);
