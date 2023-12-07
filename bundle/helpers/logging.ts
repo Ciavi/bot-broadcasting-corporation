@@ -1,5 +1,5 @@
 import * as log4js from "log4js";
-import * as log4jsconf from "../log4js.json";
+import * as log4jsconf from "../../log4js.json";
 
 export default class Logger {
     public file: log4js.Logger;
